@@ -21,10 +21,11 @@ st.set_page_config(
 # ------------------------------------------------------------------
 FASTAPI_URL = st.sidebar.text_input(
     "FastAPI URL",
-    value="http://127.0.0.1:8000/predict",
-    help="Change if your backend is running on a different host/port",
-    BACKEND_URL = "https://telecom-churn-app-1-wkem.onrender.com"
+    value="https://telecom-churn-app-1-wkem.onrender.com/predict",
+    help="Change if your backend is running on a different host/port"
 )
+BACKEND_URL = "https://telecom-churn-app-1-wkem.onrender.com"
+
 
 ALL_STATES = [
     "Andhra Pradesh",
