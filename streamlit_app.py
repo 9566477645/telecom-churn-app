@@ -68,16 +68,31 @@ data = {
 # ------------------------------------------------------------------
 if st.button("Predict Churn & Generate Offer", type="primary"):
     try:
-        with st.spinner("Connecting to FastAPI backend..."):
+        with st.spinner("Connecting to FastAPI backend & generating AI offer..."):
             response = requests.post(FASTAPI_URL, json=data, timeout=30)
 
         if response.status_code == 200:
             result = response.json()
             st.success("Prediction completed successfully!")
 
-            # Display Results
-            st.subheader("Results")
-            st.json(result)
+            # Display Key Metrics nicely
+            st.subheader("📊 Prediction Results")
+            col1, col2, col3 = st.columns(3)
+            churn_status = "Churn" if result.get("churn_prediction") == 1 else "Not Churn"
+            col1.metric("Churn Prediction", churn_status)
+            col2.metric("Churn Probability", f"{result.get('churn_probability')}%")
+            col3.metric("Risk Level", result.get("risk_level"))
+            
+            st.info(f"**Normalized Partner:** {result.get('normalized_partner')}")
+
+            # Display Formatted Retention Email cleanly
+            st.subheader("✉️ Personalized Gemini AI Retention Offer")
+            email_content = result.get("retention_email", "")
+            
+            # Replace escaped newlines with actual newlines for proper markdown formatting
+            formatted_email = email_content.replace("\\n", "\n")
+            st.markdown(formatted_email)
+            
         else:
             st.error(
                 f"Backend Error (Status {response.status_code}): {response.text}"
@@ -85,7 +100,7 @@ if st.button("Predict Churn & Generate Offer", type="primary"):
 
     except requests.exceptions.ConnectionError:
         st.error(
-            "Failed to connect to the FastAPI backend. Please check if the Render URL is active."
+            "Failed to connect to cookies/FastAPI backend. Please check if the Render URL is active."
         )
     except Exception as e:
         st.error(f"An unexpected error occurred: {e}")
