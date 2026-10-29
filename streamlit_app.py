@@ -23,6 +23,7 @@ FASTAPI_URL = st.sidebar.text_input(
     "FastAPI URL",
     value="http://127.0.0.1:8000/predict",
     help="Change if your backend is running on a different host/port",
+    BACKEND_URL = "https://telecom-churn-app-1-wkem.onrender.com"
 )
 
 ALL_STATES = [
@@ -117,7 +118,7 @@ if predict_btn:
 
     with st.spinner("Analyzing customer behaviour & contacting Gemini AI..."):
         try:
-            response = requests.post("http://api:8000/predict", json=payload)
+            response = requests.post(f"{BACKEND_URL}/predict", json=data)
 
             if response.status_code == 200:
                 result = response.json()
