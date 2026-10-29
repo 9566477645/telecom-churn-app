@@ -1,0 +1,48 @@
+# ============================================================
+# docker-compose.yml
+# Runs both FastAPI backend + Streamlit frontend
+# ============================================================
+
+services:
+  # ---------- FastAPI Backend ----------
+  api:
+    build: .
+    container_name: telecom-churn-api
+    ports:
+      - "8000:8000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      # Optional: live-reload during development (comment out in production)
+      - ./app:/app/app
+      - ./saved_models:/app/saved_models
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # ---------- Streamlit Frontend ----------
+  ui:
+    build: .
+    container_name: telecom-churn-ui
+    command: streamlit run streamlit_app.py --server.port 8501 --server.address 0.0.0.0 --server.headless true
+    ports:
+      - "8501:8501"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    depends_on:
+      api:
+        condition: service_healthy
+    # Point Streamlit to the internal Docker network API
+    # (streamlit_app.py already has editable URL in sidebar)
+    volumes:
+      - ./streamlit_app.py:/app/streamlit_app.py
+    restart: unless-stopped
+
+# Optional named network (default bridge is fine)
+networks:
+  default:
+    name: telecom-churn-net
