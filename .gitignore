@@ -1,0 +1,14 @@
+# Environment variables
+.env
+
+# Python cache & virtual environments
+__pycache__/
+*.py[cod]
+*$py.cache
+.venv/
+env/
+venv/
+
+# Model backups or large datasets if needed (optional)
+# data/
+# saved_models/
