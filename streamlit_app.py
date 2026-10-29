@@ -1,197 +1,78 @@
-"""
-Indian Telecom Customer Churn Prediction & GenAI Retention
-Streamlit frontend that talks to the FastAPI backend.
-"""
-
-import streamlit as st
+import os
 import requests
+import streamlit as st
 
-# ------------------------------------------------------------------
-# Page config
-# ------------------------------------------------------------------
+# Page Configuration
 st.set_page_config(
-    page_title="Indian Telecom Churn Prediction & GenAI",
-    page_icon="📱",
-    layout="wide",
-    initial_sidebar_state="expanded",
+    page_title="Indian Telecom Customer Churn Prediction", page_icon="📡", layout="wide"
+)
+
+st.title("IN Indian Telecom Customer Churn Prediction")
+st.markdown(
+    "Predict whether a customer of **Jio / Airtel / Vodafone / BSNL** is likely to churn "
+    "and automatically generate a personalized Gemini AI retention offer."
 )
 
 # ------------------------------------------------------------------
-# Constants
+# Sidebar Configuration
 # ------------------------------------------------------------------
+st.sidebar.header("Configuration")
 FASTAPI_URL = st.sidebar.text_input(
     "FastAPI URL",
     value="https://telecom-churn-app-1-wkem.onrender.com/predict",
-    help="Change if your backend is running on a different host/port"
-)
-BACKEND_URL = "https://telecom-churn-app-1-wkem.onrender.com"
-
-
-ALL_STATES = [
-    "Andhra Pradesh",
-    "Arunachal Pradesh",
-    "Assam",
-    "Bihar",
-    "Chhattisgarh",
-    "Goa",
-    "Gujarat",
-    "Haryana",
-    "Himachal Pradesh",
-    "Jharkhand",
-    "Karnataka",
-    "Kerala",
-    "Madhya Pradesh",
-    "Maharashtra",
-    "Manipur",
-    "Meghalaya",
-    "Mizoram",
-    "Nagaland",
-    "Odisha",
-    "Punjab",
-    "Rajasthan",
-    "Sikkim",
-    "Tamil Nadu",
-    "Telangana",
-    "Tripura",
-    "Uttar Pradesh",
-    "Uttarakhand",
-    "West Bengal",
-]
-
-PARTNERS = [
-    "Reliance Jio",
-    "Airtel",
-    "Vodafone",
-    "BSNL",
-]
-
-# ------------------------------------------------------------------
-# Header
-# ------------------------------------------------------------------
-st.title("🇮🇳 Indian Telecom Customer Churn Prediction")
-st.markdown(
-    """
-    Predict whether a customer of **Jio / Airtel / Vodafone / BSNL** is likely to churn  
-    and automatically generate a **personalized Gemini AI retention offer**.
-    """
+    help="Change if your backend is running on a different host/port",
 )
 
-# ------------------------------------------------------------------
-# Sidebar inputs
-# ------------------------------------------------------------------
-st.sidebar.header("📋 Customer Profile")
+st.sidebar.header("Customer Input Features")
 
-telecom_partner = st.sidebar.selectbox("Telecom Partner", PARTNERS, index=0)
-gender = st.sidebar.selectbox("Gender", ["M", "F"], index=0)
-age = st.sidebar.slider("Age", 18, 80, 32)
-state = st.sidebar.selectbox("State", ALL_STATES, index=10)  # Karnataka default
-num_dependents = st.sidebar.slider("Number of Dependents", 0, 5, 1)
-estimated_salary = st.sidebar.number_input(
-    "Estimated Annual Salary (₹)",
-    min_value=20000,
-    max_value=500000,
-    value=75000,
-    step=5000,
+# Example input fields (ungaloda model features-ku etha mathiri change pannikonga)
+gender = st.sidebar.selectbox("Gender", ["Male", "Female"])
+senior_citizen = st.sidebar.selectbox("Senior Citizen", [0, 1])
+partner = st.sidebar.selectbox("Partner", ["Yes", "No"])
+dependents = st.sidebar.selectbox("Dependents", ["Yes", "No"])
+tenure = st.sidebar.slider("Tenure (Months)", 0, 72, 12)
+monthly_charges = st.sidebar.number_input(
+    "Monthly Charges", 0.0, 200.0, 50.0
 )
-calls_made = st.sidebar.number_input("Monthly Calls Made", min_value=0, max_value=300, value=45)
-sms_sent = st.sidebar.number_input("Monthly SMS Sent", min_value=0, max_value=150, value=20)
-data_used = st.sidebar.number_input(
-    "Monthly Data Used (MB)", min_value=0, max_value=20000, value=5000, step=100
-)
+total_charges = st.sidebar.number_input("Total Charges", 0.0, 5000.0, 500.0)
 
 # ------------------------------------------------------------------
-# Predict button
+# Build the Request Data Dictionary
 # ------------------------------------------------------------------
-predict_btn = st.sidebar.button("🔍 Predict Churn & Generate Offer", type="primary", use_container_width=True)
-
-if predict_btn:
-    payload = {
-        "telecom_partner": telecom_partner,
-        "gender": gender,
-        "age": age,
-        "state": state,
-        "num_dependents": num_dependents,
-        "estimated_salary": estimated_salary,
-        "calls_made": calls_made,
-        "sms_sent": sms_sent,
-        "data_used": data_used,
-    }
-
-    with st.spinner("Analyzing customer behaviour & contacting Gemini AI..."):
-        try:
-            response = requests.post(f"{BACKEND_URL}/predict", json=data)
-
-            if response.status_code == 200:
-                result = response.json()
-
-                churn_pred = result.get("churn_prediction")
-                churn_prob = result.get("churn_probability", 0)
-                risk_level = result.get("risk_level", "Unknown")
-                retention_email = result.get("retention_email", "")
-                normalized = result.get("normalized_partner", telecom_partner)
-
-                st.divider()
-
-                # Metrics row
-                m1, m2, m3 = st.columns(3)
-                m1.metric("Churn Probability", f"{churn_prob}%")
-                m2.metric("Risk Level", risk_level)
-                m3.metric("Prediction", "Will Churn ⚠️" if churn_pred == 1 else "Will Stay ✅")
-
-                st.divider()
-
-                col1, col2 = st.columns([1, 1.4])
-
-                with col1:
-                    st.subheader("📊 Prediction Summary")
-                    if risk_level == "High":
-                        st.error("**HIGH CHURN RISK** – Immediate retention action recommended.")
-                    elif risk_level == "Medium":
-                        st.warning("**MEDIUM RISK** – Proactive engagement advised.")
-                    else:
-                        st.success("**LOW RISK** – Customer appears stable.")
-
-                    st.markdown(
-                        f"""
-                        | Field | Value |
-                        |-------|-------|
-                        | Partner | {normalized} |
-                        | Age | {age} |
-                        | State | {state} |
-                        | Salary | ₹{estimated_salary:,} |
-                        | Calls / SMS / Data | {calls_made} / {sms_sent} / {data_used} MB |
-                        """
-                    )
-
-                with col2:
-                    st.subheader("🤖 Gemini AI Retention Strategy")
-                    if risk_level in ("High", "Medium"):
-                        st.info("Personalized retention email generated by Gemini:")
-                        st.markdown(retention_email)
-                    else:
-                        st.info(retention_email)
-
-            else:
-                try:
-                    detail = response.json().get("detail", response.text)
-                except Exception:
-                    detail = response.text
-                st.error(f"API Error ({response.status_code}): {detail}")
-
-        except requests.exceptions.ConnectionError:
-            st.error(
-                "❌ Could not connect to FastAPI backend.\n\n"
-                "Make sure the server is running:\n"
-                "```bash\nuvicorn app.main:app --reload --host 0.0.0.0 --port 8000\n```"
-            )
-        except requests.exceptions.Timeout:
-            st.error("Request timed out. Gemini may be slow – try again.")
-        except Exception as e:
-            st.error(f"Unexpected error: {str(e)}")
+data = {
+    "gender": gender,
+    "SeniorCitizen": senior_citizen,
+    "Partner": partner,
+    "Dependents": dependents,
+    "tenure": tenure,
+    "MonthlyCharges": monthly_charges,
+    "TotalCharges": total_charges,
+}
 
 # ------------------------------------------------------------------
-# Footer
+# Prediction Trigger
 # ------------------------------------------------------------------
-st.sidebar.markdown("---")
-st.sidebar.caption("Model: XGBoost · GenAI: Gemini · Dataset: Indian Telecom Churn")
-st.sidebar.caption("Run `python train_model.py` if you need to retrain.")
+if st.button("Predict Churn & Generate Offer", type="primary"):
+  try:
+    with st.spinner("Connecting to FastAPI backend..."):
+      response = requests.post(FASTAPI_URL, json=data, timeout=30)
+
+    if response.status_code == 200:
+      result = response.json()
+      st.success("Prediction completed successfully!")
+
+      # Display Results (Customize based on your backend output keys)
+      st.subheader("Results")
+      st.json(result)
+    else:
+      st.error(
+          f"Backend Error (Status {response.status_code}): {response.text}"
+      )
+
+  except requests.exceptions.ConnectionError:
+    st.error(
+        "Failed to connect to the FastAPI backend. Please check if the Render"
+        " URL is active."
+    )
+  except Exception as e:
+    st.error(f"An unexpected error occurred: {e}")
